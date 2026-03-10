@@ -27,6 +27,7 @@ use super::{
   parse_target_type,
 };
 use crate::{AFFINE_PRO_PUBLIC_KEY, license_import::normalize_license, runtime::Deployment};
+use crate::selfhost_member_limit::grant_with_member_limit;
 
 pub(super) async fn load_decision_time(
   tx: &mut Transaction<'_, Postgres>,
@@ -107,7 +108,7 @@ fn resolve_grant(
       signed_payload: row.signed_payload.as_deref(),
     })
     .collect::<Vec<_>>();
-  resolve_entitlements(
+  let grant = resolve_entitlements(
     &AccessContext {
       deployment: match deployment {
         Deployment::Cloud => CoreDeployment::Cloud,
@@ -119,7 +120,8 @@ fn resolve_grant(
       license_public_key: AFFINE_PRO_PUBLIC_KEY,
     },
     &facts,
-  )
+  );
+  grant_with_member_limit(grant)
 }
 
 pub(super) async fn resolve_workspace_entitlement(

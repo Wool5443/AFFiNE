@@ -12,6 +12,7 @@ use crate::{
   AFFINE_PRO_PUBLIC_KEY,
   permission::AuthorizePermissionInputV1,
   runtime::{Deployment, RuntimeError, RuntimeResult},
+  selfhost_member_limit::grant_with_member_limit,
 };
 
 #[derive(Deserialize)]
@@ -240,6 +241,16 @@ impl PermissionStore {
           preview_enabled: false,
         })
         .collect();
+      let grant = resolve_entitlements(
+        &AccessContext {
+          deployment: core_deployment(self.deployment),
+          target_type: TargetType::Workspace,
+          workspace_id: Some(workspace_id),
+          now: Utc::now(),
+          license_public_key: self.license_public_key.as_deref(),
+        },
+        &[],
+      );
       return Ok(PermissionSnapshot {
         request: core_request,
         facts: AclFacts {
@@ -251,16 +262,7 @@ impl PermissionStore {
           url_preview_enabled: false,
           docs,
         },
-        grant: resolve_entitlements(
-          &AccessContext {
-            deployment: core_deployment(self.deployment),
-            target_type: TargetType::Workspace,
-            workspace_id: Some(workspace_id),
-            now: Utc::now(),
-            license_public_key: self.license_public_key.as_deref(),
-          },
-          &[],
-        ),
+        grant: grant_with_member_limit(grant),
         active_member: false,
         sharing_enabled: false,
       });
@@ -310,6 +312,7 @@ impl PermissionStore {
       },
       &entitlement_facts,
     );
+    let grant = grant_with_member_limit(grant);
     if self.deployment == Deployment::SelfHosted {
       let reason = if grant.rights.commercial {
         "valid"

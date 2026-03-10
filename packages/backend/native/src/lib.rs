@@ -15,6 +15,7 @@ pub mod llm;
 pub mod permission;
 pub mod runtime;
 pub mod safe_fetch;
+mod selfhost_member_limit;
 pub(crate) mod search_index;
 pub mod tiktoken;
 pub mod url_policy;

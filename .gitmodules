@@ -1,0 +1,3 @@
+[submodule "affine-workers"]
+	path = affine-workers
+	url = https://github.com/eikaramba/affine-workers

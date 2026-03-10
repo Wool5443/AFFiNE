@@ -10,6 +10,8 @@ use napi::{Error as NapiError, Result, Status, bindgen_prelude::Buffer};
 use napi_derive::napi;
 use serde_json::Value;
 
+use crate::selfhost_member_limit::limits_for_plan;
+
 #[napi(object)]
 pub struct ResolveEntitlementInput {
   pub deployment_type: String,
@@ -231,6 +233,7 @@ fn active_with_grant(
   expires_at: Option<String>,
 ) -> ResolvedEntitlement {
   let quantity = quantity.filter(|_| matches!(plan, Plan::Team | Plan::SelfHostedTeam));
+  let limits = limits_for_plan(&plan, limits);
   ResolvedEntitlement {
     plan: plan.as_str().to_string(),
     valid: true,
@@ -265,7 +268,7 @@ fn invalid_license(code: &str, message: &str) -> ResolvedEntitlement {
     issued_at: None,
     entity: None,
     issuer: None,
-    quota: quota(access.limits),
+    quota: quota(limits_for_plan(&plan, access.limits)),
     flags: flags(access.rights),
     error_code: Some(code.to_string()),
     error_message: Some(message.to_string()),
@@ -451,6 +454,19 @@ pub(crate) mod tests {
     assert_eq!(ai.plan, "free");
     assert_eq!(ai.quota.copilot_action_limit, None);
     assert_eq!(ai.flags.get("copilotByok"), Some(&true));
+  }
+
+  #[test]
+  fn selfhost_free_entitlement_reports_ten_thousand_seats() {
+    let mut free = input(None, None);
+    free.deployment_type = "selfhosted".to_string();
+    let free = resolve_entitlement_v1(free).unwrap();
+    assert_eq!(free.plan, "selfhost_free");
+    assert_eq!(free.quota.seat_limit, Some(10_000));
+
+    let invalid = resolve_entitlement_v1(license_input(b"invalid license".to_vec(), TEST_WORKSPACE_ID)).unwrap();
+    assert!(!invalid.valid);
+    assert_eq!(invalid.quota.seat_limit, Some(10_000));
   }
 
   #[test]
