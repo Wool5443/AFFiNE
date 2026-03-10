@@ -1,23 +1,12 @@
 name: affine-source
 
 services:
-  proxy:
-    build:
-      context: ../..
-      dockerfile: .docker/source-build/nginx.Dockerfile
-    ports:
-      - '${PUBLIC_PORT:-8080}:80'
-    depends_on:
-      affine:
-        condition: service_started
-      worker:
-        condition: service_started
-    restart: unless-stopped
-
   affine:
     build:
       context: ../..
       dockerfile: .docker/source-build/Dockerfile
+    ports:
+      - '${PUBLIC_PORT:-8080}:3010'
     depends_on:
       redis:
         condition: service_healthy
@@ -26,8 +15,8 @@ services:
       affine_migration:
         condition: service_completed_successfully
     volumes:
-      - affine_source_storage:/root/.affine/storage
-      - affine_source_config:/root/.affine/config
+      - ${UPLOAD_LOCATION:-./data/storage}:/root/.affine/storage
+      - ${CONFIG_LOCATION:-./data/config}:/root/.affine/config
     env_file:
       - .env
     environment:
@@ -35,8 +24,6 @@ services:
       DATABASE_URL: postgresql://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE:-affine}
       AFFINE_INDEXER_ENABLED: 'false'
       DEPLOYMENT_TYPE: selfhosted
-    expose:
-      - '3010'
     restart: unless-stopped
 
   affine_migration:
@@ -45,8 +32,8 @@ services:
       dockerfile: .docker/source-build/Dockerfile
     command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
     volumes:
-      - affine_source_storage:/root/.affine/storage
-      - affine_source_config:/root/.affine/config
+      - ${UPLOAD_LOCATION:-./data/storage}:/root/.affine/storage
+      - ${CONFIG_LOCATION:-./data/config}:/root/.affine/config
     env_file:
       - .env
     environment:
@@ -83,7 +70,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     volumes:
-      - affine_source_postgres:/var/lib/postgresql/data
+      - ${DB_DATA_LOCATION:-./data/postgres/pgdata}:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -96,8 +83,3 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-
-volumes:
-  affine_source_postgres:
-  affine_source_storage:
-  affine_source_config:

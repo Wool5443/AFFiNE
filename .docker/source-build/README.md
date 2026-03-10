@@ -11,16 +11,23 @@ It builds:
 - `@affine/mobile`
 - `@affine/server`
 
-It also includes the `affine-workers` submodule and exposes the app at
-`http://localhost:8080`.
+It also includes the `affine-workers` submodule and is configured to expose the
+app on port `22385` for a reverse proxy such as nginx in front of
+`https://affine.twenty5443.duckdns.org`.
 
 ## Start
 
 ```sh
 cp .docker/source-build/.env.example .docker/source-build/.env
-mkdir -p .local/affine-source/storage .local/affine-source/config .local/affine-source/postgres
+mkdir -p data/storage data/config data/postgres/pgdata
 docker compose --env-file .docker/source-build/.env -f .docker/source-build/compose.yml up -d --build
 ```
+
+Data directories are configured through `.docker/source-build/.env`:
+
+- `DB_DATA_LOCATION`
+- `UPLOAD_LOCATION`
+- `CONFIG_LOCATION`
 
 ## Stop
 
