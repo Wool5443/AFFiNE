@@ -76,11 +76,6 @@ export class CryptoHelper implements OnModuleInit {
   onModuleInit() {
     if (env.selfhosted) {
       this.AFFiNEProPublicKey = this.loadAFFiNEProPublicKey();
-      if (!this.AFFiNEProPublicKey) {
-        throw new Error(
-          'AFFINE_PRO_PUBLIC_KEY must be embedded in self-hosted server-native builds.'
-        );
-      }
     }
   }
 

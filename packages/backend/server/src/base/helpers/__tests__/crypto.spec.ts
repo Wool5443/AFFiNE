@@ -108,7 +108,7 @@ test('should be able to digest', t => {
   t.is(hash, 'uU0nuZNNPgilLlLX2n2r+sSE7+N6U4DukIj3rOLvzek=');
 });
 
-test('uses the native verifier public key', t => {
+test('allows self-hosted startup without a native verifier public key', t => {
   const deployment = globalThis.env.DEPLOYMENT_TYPE;
   // @ts-expect-error test mutates deployment mode before the lifecycle hook
   globalThis.env.DEPLOYMENT_TYPE = 'selfhosted';
@@ -121,10 +121,8 @@ test('uses the native verifier public key', t => {
   loadKey.onFirstCall().returns(null);
   loadKey.onSecondCall().returns(Buffer.from('public-key'));
   try {
-    t.throws(() => t.context.crypto.onModuleInit(), {
-      message:
-        'AFFINE_PRO_PUBLIC_KEY must be embedded in self-hosted server-native builds.',
-    });
+    t.notThrows(() => t.context.crypto.onModuleInit());
+    t.is(t.context.crypto.AFFiNEProPublicKey, null);
     t.context.crypto.onModuleInit();
     t.is(t.context.crypto.AFFiNEProPublicKey?.toString(), 'public-key');
   } finally {
