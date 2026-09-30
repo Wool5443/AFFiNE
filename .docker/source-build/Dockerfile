@@ -30,9 +30,12 @@ RUN yarn affine @affine/server-native build
 RUN cp /repo/packages/backend/native/server-native.node /repo/packages/backend/native/server-native.x64.node
 RUN cp /repo/packages/backend/native/server-native.node /repo/packages/backend/native/server-native.arm64.node
 RUN cp /repo/packages/backend/native/server-native.node /repo/packages/backend/native/server-native.armv7.node
-RUN yarn affine @affine/web build
-RUN yarn affine @affine/admin build
-RUN yarn affine @affine/mobile build
+ARG GITHUB_SHA=local
+ENV GITHUB_SHA=${GITHUB_SHA}
+
+RUN yarn affine @affine/web build && test -f /repo/packages/frontend/apps/web/dist/selfhost.html
+RUN yarn affine @affine/admin build && test -f /repo/packages/frontend/admin/dist/index.html
+RUN yarn affine @affine/mobile build && test -f /repo/packages/frontend/apps/mobile/dist/index.html
 RUN yarn workspace @affine/server build
 RUN cp -R /repo/packages/backend/server/dist /tmp/affine-server-dist
 

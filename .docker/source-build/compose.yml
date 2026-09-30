@@ -1,10 +1,9 @@
-name: affine-source
+name: affine
 
 services:
   affine:
-    build:
-      context: ../..
-      dockerfile: .docker/source-build/Dockerfile
+    image: affine-local:release
+    pull_policy: never
     ports:
       - '${PUBLIC_PORT:-8080}:3010'
     depends_on:
@@ -21,15 +20,14 @@ services:
       - .env
     environment:
       REDIS_SERVER_HOST: redis
-      DATABASE_URL: postgresql://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE:-affine}
+      DATABASE_URL: postgresql://${DB_USERNAME}:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/${DB_DATABASE:-affine}
       AFFINE_INDEXER_ENABLED: 'false'
       DEPLOYMENT_TYPE: selfhosted
     restart: unless-stopped
 
   affine_migration:
-    build:
-      context: ../..
-      dockerfile: .docker/source-build/Dockerfile
+    image: affine-local:release
+    pull_policy: never
     command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
     volumes:
       - ${UPLOAD_LOCATION:-./data/storage}:/root/.affine/storage
@@ -38,7 +36,7 @@ services:
       - .env
     environment:
       REDIS_SERVER_HOST: redis
-      DATABASE_URL: postgresql://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE:-affine}
+      DATABASE_URL: postgresql://${DB_USERNAME}:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/${DB_DATABASE:-affine}
       AFFINE_INDEXER_ENABLED: 'false'
       DEPLOYMENT_TYPE: selfhosted
     depends_on:
@@ -48,8 +46,8 @@ services:
         condition: service_healthy
 
   worker:
-    build:
-      context: ../../affine-workers
+    image: affine-worker-local:release
+    pull_policy: never
     env_file:
       - .env
     environment:
@@ -73,7 +71,7 @@ services:
       - ${DB_DATA_LOCATION:-./data/postgres/pgdata}:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       POSTGRES_DB: ${DB_DATABASE:-affine}
       POSTGRES_INITDB_ARGS: '--data-checksums'
     healthcheck:

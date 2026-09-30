@@ -1,6 +1,19 @@
 .github/**/*.md
 .gitignore
 
+# Local credentials, configuration, and deployment bundles
+.git
+.aws
+.agents
+.codex
+**/.env
+**/*.env
+**/.env.local
+**/*.local.env
+/data
+/deployment
+/affine-workers
+
 # Local dependency/build artifacts
 /node_modules
 /target
